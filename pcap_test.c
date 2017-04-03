@@ -35,12 +35,11 @@ int main(int argc, char* argv[]){
 	while (1) {
 		DIR* dir = opendir("/root/pcap");
 		while((entry = readdir(dir)) != NULL){
-			//printf("%s",get_filename_ext(entry -> d_name));
-			if(get_filename_ext(entry -> d_name) == "pcap"){
+			if(strcmp(get_filename_ext(entry -> d_name) ,"pcap") == 0 ){
 				//TODO
 
 			}
-			if(strcmp(get_filename_ext(entry -> d_name),"txt")==0  ){
+			if(strcmp(get_filename_ext(entry -> d_name),"txt") == 0  ){
 				file = fopen(entry -> d_name, "r");
 				char strTemp[255];
 				char *pStr;
