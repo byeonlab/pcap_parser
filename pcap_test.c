@@ -29,7 +29,7 @@ int main(int argc, char* argv[]){
 	//close(STDERR_FILENO);
 
 	char path;
-	dirent* entry;
+	struct dirent* entry;
 	FILE* file = NULL;
 
 	while (1) {
