@@ -8,6 +8,8 @@
 #include <pcap.h>
 #include <netinet/in.h>
 #include <netinet/if_ether.h>
+#include <signal.h>
+#include <wait.h>
 
 const char *get_extension(const char *filename) {
 	    const char *dot = strrchr(filename, '.');
@@ -52,47 +54,30 @@ void packet_parser(
 	int total_headers_size = ethernet_header_length + ip_header_length + tcp_header_length;
 	payload_length = header->caplen - total_headers_size;
 	payload = packet + total_headers_size;
+	
 
 	if (payload_length > 0) {
 		const u_char *temp_pointer = payload;
-		int byte_count = 0;
 		char *start = strstr(payload, "GET /jk?");
-		char *end = strstr(payload, "&p=");
-		char got_it[end-start+1];
+		//char *end = strstr(payload, "&p=");
+		int byte_count=0;	
+		//char got_it[end-start+5];
 		if (start != NULL){ 
-			//while (byte_count++ < payload_length){
-			/*	
-				if (*temp_pointer == '\n') break;
-					printf("%c", *temp_pointer);
-					temp_pointer++;
-					*/
-			//}
-
-			memcpy(got_it, payload, end-start+1);
-			for (int i = 8; i < end-start; i++) printf("%c",*(got_it+i));
-			printf("\n");
+			while(byte_count++ <payload_length){
+			//memcpy(got_it, payload, end-start+2);
+			//for (int i = 8; i < end-start; i++) printf("%c",*(got_it+i));
+			if (*temp_pointer == '\n') break;
+			printf("%c",*temp_pointer);
+			temp_pointer++;
 		}
+			printf("\n");
+	}
 	}
 	return;
 }
 
-int main(int argc, char** argv){
-	/*
-	pid_t process_id = 0;
-	pid_t sid = 0;
-
-	process_id = fork();
-	if (process_id < 0) exit(1);
-	if (process_id > 0) exit(0);
-	umask(0);
-	
-	sid = setsid();
-	if(sid < 0) exit(1);
-	
-	close(STDIN_FILENO);
-	close(STDOUT_FILENO);
-	close(STDERR_FILENO);
-	*/
+//int main(int argc, char** argv){
+int main(){
 
 	struct dirent* entry;
 	FILE* file = NULL;
@@ -104,35 +89,52 @@ int main(int argc, char** argv){
 	u_char *my_arguments = NULL;
 
 	DIR* dir; 
-
+	int status;
 	char* output_file;
+	pid_t pid;
 	while (1) {
+		pid = fork();
 		dir = opendir("/root/pcap");
+			if (pid == 0){
 		while ((entry = readdir(dir)) != NULL){
-			if (strcmp(get_extension(entry -> d_name) ,"pcap") == 0 ) {
-				output_file = output_txt(entry->d_name);	
-				freopen(output_file, "w+", stdout);
+				if (strcmp(get_extension(entry -> d_name) ,"pcap") == 0 ) {
+					printf("Got it!");
+					total_packet_count = 10000000;
+					snapshot_length = 1024;
+					my_arguments = NULL;
 
-				handle = pcap_open_offline(entry -> d_name, error_buffer);
-				pcap_loop(handle, total_packet_count, packet_parser, my_arguments);
-
-				remove(entry -> d_name);
-				freopen("/dev/tty", "a", stdout);
-			}
-			if (strcmp(get_extension(entry -> d_name),"txt") == 0 ) {
-				file = fopen(entry -> d_name, "r");
-				char temp[255];
-				char *line;
-				while(!feof(file)) {
-					line = fgets(temp, sizeof(temp), file);	
-					printf("%s", line);
+					//output_file = output_txt(entry->d_name);	
+					freopen("./out.txt", "w+", stdout);
+					printf("in freopen");
+					handle = pcap_open_offline(entry->d_name,error_buffer);
+					pcap_loop(handle, total_packet_count, packet_parser, my_arguments);// need to redirect stdout
+					fflush(stdout);
+					remove(entry -> d_name);
+					freopen("/dev/tty", "w", stdout);
+				}	
+			
+				if (strcmp(get_extension(entry -> d_name),"txt") == 0 ) {
+					file = fopen(entry -> d_name, "r");
+					char temp[255];
+					char *line;
+					while(!feof(file)) {
+						line = fgets(temp, sizeof(temp), file);	
+						if(line == NULL) continue;
+						printf("%s", line);
+					}
+					fclose(file);
+					remove(entry -> d_name);
+					//sleep(3);
 				}
-				fclose(file);
-				remove(entry -> d_name);
 			}
-		}
 		closedir(dir);
-	}
-
-	return (0);
+		return 0;
+			}
+		else if(pid < 0) return 1;
+		else  waitpid(0, &status, 0);
+		
+		closedir(dir);
+		}
+	
+	return 0;
 }
