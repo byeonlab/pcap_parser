@@ -17,9 +17,10 @@ const char *get_extension(const char *filename) {
 			    return dot + 1;
 }
 
-char *output_txt(const char *string1){
-	char *ret = malloc(strlen(string1)+5);
-	strcpy(ret, string1);
+char *output_txt(const char *filename) {
+	const char *dot = strrchr(filename, '.');
+	char *ret = (char *)malloc(dot - filename + 5);
+	memcpy(ret, filename, dot - filename);
 	strcat(ret, ".txt");
 	return ret;
 }
@@ -55,60 +56,60 @@ void packet_parser(
 	payload_length = header->caplen - total_headers_size;
 	payload = packet + total_headers_size;
 	
-
 	if (payload_length > 0) {
 		const u_char *temp_pointer = payload;
-		char *start = strstr(payload, "GET /jk?");
-		//char *end = strstr(payload, "&p=");
+		char *start = strstr(payload, "GET /jk?"); //I want to get this part of URI in payload
+		char *end = strstr(payload, "&p=");
 		int byte_count=0;	
-		//char got_it[end-start+5];
+		char got_it[end-start+5];
 		if (start != NULL){ 
-			while(byte_count++ <payload_length){
-			//memcpy(got_it, payload, end-start+2);
-			//for (int i = 8; i < end-start; i++) printf("%c",*(got_it+i));
-			if (*temp_pointer == '\n') break;
-			printf("%c",*temp_pointer);
-			temp_pointer++;
-		}
+//			while(byte_count++ <payload_length){
+			memcpy(got_it, payload, end-start+2);
+			for (int i = 8; i < end-start; i++) printf("%c",*(got_it+i)); //Choose whatever you want from payload :D
+//			if (*temp_pointer == '\n') break;
+//			printf("%c",*temp_pointer);
+//			temp_pointer++;
+//		}
 			printf("\n");
-	}
+		}
 	}
 	return;
 }
 
-//int main(int argc, char** argv){
 int main(){
-
+/*This program parses .pcap file and save the parsed part to .txt file
+Then it opens the .txt file, prints it out and deletes the file.
+Modify this the way you want this to be*/
 	struct dirent* entry;
 	FILE* file = NULL;
 
 	char error_buffer[PCAP_ERRBUF_SIZE];
 	pcap_t *handle;
-	int snapshot_length = 1024;
-	int total_packet_count = 100000000;
-	u_char *my_arguments = NULL;
+	int snapshot_length;
+	int total_packet_count;
+	u_char *my_arguments;
 
 	DIR* dir; 
-	int status;
 	char* output_file;
+
 	pid_t pid;
+	int status;
+
 	while (1) {
 		pid = fork();
 		dir = opendir("/root/pcap");
-			if (pid == 0){
-		while ((entry = readdir(dir)) != NULL){
+		if (pid == 0){ // I made this subprocess because of memory leak. Fortunately memory will be returned with this trick.
+			while ((entry = readdir(dir)) != NULL){ //Iterates directory 
 				if (strcmp(get_extension(entry -> d_name) ,"pcap") == 0 ) {
-					printf("Got it!");
-					total_packet_count = 10000000;
+					sleep(5);
+					total_packet_count = 10000000;//as much as you want
 					snapshot_length = 1024;
 					my_arguments = NULL;
 
-					//output_file = output_txt(entry->d_name);	
-					freopen("./out.txt", "w+", stdout);
-					printf("in freopen");
+					output_file = output_txt(entry->d_name);	
+					freopen(output_file, "w+", stdout);//I did some weird stuff for my own purpose. Normally it's not necessary. 
 					handle = pcap_open_offline(entry->d_name,error_buffer);
-					pcap_loop(handle, total_packet_count, packet_parser, my_arguments);// need to redirect stdout
-					fflush(stdout);
+					pcap_loop(handle, total_packet_count, packet_parser, my_arguments); //So, this is where memory leaks.
 					remove(entry -> d_name);
 					freopen("/dev/tty", "w", stdout);
 				}	
@@ -124,17 +125,14 @@ int main(){
 					}
 					fclose(file);
 					remove(entry -> d_name);
-					//sleep(3);
 				}
 			}
-		closedir(dir);
-		return 0;
-			}
+			closedir(dir);
+			return 0;
+		}
 		else if(pid < 0) return 1;
 		else  waitpid(0, &status, 0);
-		
 		closedir(dir);
-		}
-	
+	}
 	return 0;
 }
