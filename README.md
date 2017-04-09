@@ -1,4 +1,9 @@
-A pcap file parser which finds GET requests using libpcap library in C.
+A pcap file parser using libpcap library in C.
 
 TODO:
--Daemonize program (for linux)
+
+
+1.Daemonize program (for linux)
+
+
+2.Maybe some countings and DB stuffs...
