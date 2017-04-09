@@ -6,4 +6,4 @@ TODO:
 1.Daemonize program (for linux)
 
 
-2.Maybe some countings and DB stuffs...
+2.Impelment dynamic sized struct to make dynamically growing dictionary better.
