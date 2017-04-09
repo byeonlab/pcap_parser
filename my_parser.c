@@ -1,14 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
+//#include <sys/types.h>
+//#include <sys/stat.h>
 #include <string.h>
 #include <dirent.h>
 #include <pcap.h>
 #include <netinet/in.h>
 #include <netinet/if_ether.h>
-#include <signal.h>
+//#include <signal.h>
 #include <wait.h>
 /*
 typedef struct {
