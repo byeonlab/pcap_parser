@@ -82,11 +82,13 @@ char *change_extension(const char *filename, const char *extension) { //change f
 }
 
 void packet_parser(
-		u_char *args,
-		const struct pcap_pkthdr *header,
-		const u_char *packet
-)
+	u_char *output_file,
+	const struct pcap_pkthdr *header,
+	const u_char *packet
+		)
 {
+	FILE *file = NULL;
+
 	struct ether_header *eth_header;
 	eth_header = (struct ether_header *) packet;
 	if (ntohs(eth_header -> ether_type) != ETHERTYPE_IP) return;
@@ -132,10 +134,13 @@ void packet_parser(
 				count++;
 			}
 			got_it[count] = 0;
-			printf("\n%s",got_it);
+			file = fopen(output_file, "a+");
+			fprintf(file,"\n%s",got_it);
 
 			free(got_it);
 			got_it = NULL;
+			fclose(file);
+			file = NULL;
 //			if (*temp_pointer == '\n') break;
 //			printf("%c",*temp_pointer);
 //			temp_pointer++;
@@ -178,11 +183,10 @@ Modify this the way you want this to be*/
 					my_arguments = NULL;
 
 					output_file = change_extension(entry->d_name, ".txt");	
-					freopen(output_file, "w+", stdout);//I did some weird stuff for my own purpose. Normally it's not necessary. 
 					handle = pcap_open_offline(entry->d_name,error_buffer);
-					pcap_loop(handle, total_packet_count, packet_parser, my_arguments); //So, this is where memory leaks.
+					pcap_loop(handle, total_packet_count, packet_parser, output_file); //So, this is where memory leaks.
 					remove(entry -> d_name);
-					freopen("/dev/tty", "w", stdout);
+
 				}	
 				if (strcmp(get_extension(entry -> d_name),"txt") == 0 ) {
 					json = change_extension(entry -> d_name, ".json");
