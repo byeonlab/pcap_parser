@@ -185,6 +185,8 @@ Modify this the way you want this to be*/
 					output_file = change_extension(entry->d_name, ".txt");	
 					handle = pcap_open_offline(entry->d_name,error_buffer);
 					pcap_loop(handle, total_packet_count, packet_parser, output_file); //So, this is where memory leaks.
+					free(output_file);
+					output_file = NULL;
 					remove(entry -> d_name);
 
 				}	
